@@ -38,6 +38,15 @@ type DockerResult struct {
 	Result      string
 }
 
+func NewDocker(config Config, containerId string) Docker {
+	dc, _ := client.NewClientWithOpts(client.FromEnv)
+	return Docker{
+		Client:      dc,
+		Config:      config,
+		ContainerId: containerId,
+	}
+}
+
 // Run() performs the same operations as the `docker run` command
 func (d *Docker) Run() DockerResult {
 	ctx := context.Background()
@@ -117,7 +126,8 @@ func (d *Docker) Stop() DockerResult {
 
 	log.Printf(
 		"Attempting to stop container %v",
-		d.ContainerId)
+		d.ContainerId,
+	)
 
 	// Stop container
 	err := d.Client.ContainerStop(ctx, d.ContainerId, container.StopOptions{})

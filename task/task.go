@@ -19,6 +19,7 @@ const (
 
 type Task struct {
 	ID            uuid.UUID
+	ContainerID   string
 	Name          string
 	State         State
 	Image         string
@@ -35,4 +36,13 @@ type TaskEvent struct {
 	ID    uuid.UUID
 	State State
 	Task  Task
+}
+
+func NewConfig(t *Task) Config {
+	return Config{
+		Name:   t.Name,
+		Image:  t.Image,
+		Memory: int64(t.Memory),
+		Disk:   int64(t.Disk),
+	}
 }
