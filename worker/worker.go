@@ -2,7 +2,9 @@ package worker
 
 import (
 	"container/list"
+	"errors"
 	"exhy-cloud/task"
+	"fmt"
 	"log"
 	"time"
 
@@ -11,7 +13,7 @@ import (
 
 type Worker struct {
 	Name      string
-	Queue     list.List
+	Queue     *list.List
 	Db        map[uuid.UUID]*task.Task
 	TaskCount int
 }
@@ -20,8 +22,38 @@ func (w *Worker) CollectStats() {
 	//toDo
 }
 
-func (w *Worker) RunTask() {
-	//toDo
+func (w *Worker) RunTask() task.DockerResult {
+	t := w.Queue.Front().Value
+	if t == nil {
+		log.Println("[Worker] No tasks in the queue")
+		return task.DockerResult{Error: nil}
+	}
+	w.Queue.Remove(w.Queue.Front())
+
+	taskQueued := t.(task.Task)
+
+	taskPersisted := w.Db[taskQueued.ID]
+	if taskPersisted == nil {
+		taskPersisted = &taskQueued
+		w.Db[taskQueued.ID] = &taskQueued
+	}
+
+	var result task.DockerResult
+	if task.ValidStateTransition(taskPersisted.State, taskQueued.State) {
+		switch taskQueued.State {
+		case task.Scheduled:
+			result = w.StartTask(taskQueued)
+		case task.Completed:
+			result = w.StopTask(taskQueued)
+		default:
+			result.Error = errors.New("Should not reach here")
+		}
+	} else {
+		err := fmt.Errorf("Invalid transtion from %v to %v",
+			taskPersisted.State, taskQueued.State)
+		result.Error = err
+	}
+	return result
 }
 
 func (w *Worker) StartTask(t task.Task) task.DockerResult {
