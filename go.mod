@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/docker/docker v24.0.6+incompatible
 	github.com/docker/go-connections v0.4.0
+	github.com/go-chi/chi/v5 v5.0.10
 	github.com/google/uuid v1.3.1
 )
 
